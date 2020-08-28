@@ -2,9 +2,10 @@
 import os
 import sys
 import n0translate
-# import create_m3u as this # for using functions declared AFTER call
-import importlib;this = importlib.import_module(os.path.splitext(os.path.basename(__file__))[0]) # UNIVERSAL: for using functions declared AFTER call
 import argparse
+#import create_m3u as this # for using functions declared AFTER call
+# UNIVERSAL: for using functions declared AFTER call
+sys.path.insert(0, os.path.split(__file__)[0]);import importlib;this = importlib.import_module(os.path.splitext(os.path.basename(__file__))[0])
 
 if __name__ == "__main__":
     ext_for_rename = [".mp3", ".ogg"]
@@ -17,7 +18,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(add_help = False)
     # parser.add_argument("start_path", metavar="<start path>",  action="store", default=os.path.abspath(os.getcwd()), help="start renaming from dir (default: current dir)")
     parser.add_argument("start_path", nargs="?", default=os.getcwd(), help="start renaming files %s from dir (default: current dir)" % ext_for_rename)
-    parser.add_argument("-r", dest="rename_dirs", action="store_true", default=False, help="rename dirs too (default: False)")
+    parser.add_argument("-f", dest="rename_files", action="store_true", default=False, help="translit and rename files (default: False)")
+    parser.add_argument("-d", dest="rename_dirs", action="store_true", default=False, help="translit and rename dirs (default: False)")
     parser.print_help()
     args = parser.parse_args()
     
@@ -84,31 +86,36 @@ if __name__ == "__main__":
     # Search all files from args.start_path (".\\" == current dir)
     # and rename them into translited
     # ##############################################################################
-    print("*"*70)
-    print("Renaming files...")
-    for cur_path, dirnames, filenames in os.walk(args.start_path):
-        for filename in filenames:
-            filename_only, filename_ext = os.path.splitext(filename)
-            translited_name = this.translit_fname(filename_only)
-            if translited_name != filename_only:
-                filename_only, file_ext = os.path.splitext(filename)
-                if file_ext.lower() in ext_for_rename:
-                    src = os.path.join(cur_path, filename)
-                    dst = this.unique_fname(os.path.join(cur_path, translited_name+filename_ext))
-                    print("%s -> %s" % (src, dst))
-                    os.rename(src, dst)
-    print("...completed")
-    print("*"*70)
+    if args.rename_files:
+        print("*"*70)
+        print("Renaming files...")
+        for cur_path, dirnames, filenames in os.walk(args.start_path):
+            for filename in filenames:
+                filename_only, filename_ext = os.path.splitext(filename)
+                translited_name = this.translit_fname(filename_only)
+                if translited_name != filename_only:
+                    filename_only, file_ext = os.path.splitext(filename)
+                    if file_ext.lower() in ext_for_rename:
+                        src = os.path.join(cur_path, filename)
+                        dst = this.unique_fname(os.path.join(cur_path, translited_name+filename_ext))
+                        print("%s -> %s" % (src, dst))
+                        os.rename(src, dst)
+        print("...completed")
+        print("*"*70)
     # ##############################################################################
     # Search all files from args.start_path (".\\" == current dir)
     # and generate list for M3U
     # ##############################################################################
+    print("*"*70)
+    print("Searching for files...")
     files_for_m3u=[]
     for cur_path, dirnames, filenames in os.walk(args.start_path):
         for filename in filenames:
             filename_only, file_ext = os.path.splitext(filename)
             if file_ext.lower() in ext_for_rename:
                 files_for_m3u.append(os.path.join(cur_path, filename)[len(args.start_path):])
+    print("...completed")
+    print("*"*70)
     # ##############################################################################
     # Generate '<current dir>.m3u' as transliterated dir
     # ##############################################################################
